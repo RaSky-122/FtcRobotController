@@ -86,3 +86,5 @@ lint/outputs/
 lint/tmp/
 # lint/reports/
 .idea/
+build.gradle
+gradle/wrapper/gradle-wrapper.properties
