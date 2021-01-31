@@ -85,6 +85,12 @@ lint/generated/
 lint/outputs/
 lint/tmp/
 # lint/reports/
+<<<<<<< HEAD
+.idea/compiler.xml
+.idea/jarRepositories.xml
+.idea/misc.xml
+.idea/
+=======
 .idea/
 <<<<<<< HEAD
 gradle/wrapper/gradle-wrapper.properties
@@ -93,3 +99,4 @@ gradle/wrapper/gradle-wrapper.properties
 build.gradle
 gradle/wrapper/gradle-wrapper.properties
 >>>>>>> 5694e205b054e38a2c2ae29ba82eec4c9d16bdb4
+>>>>>>> 5d9c25d2947663552c0ef052d313202b2004402a
