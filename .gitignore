@@ -86,5 +86,10 @@ lint/outputs/
 lint/tmp/
 # lint/reports/
 .idea/
+<<<<<<< HEAD
 gradle/wrapper/gradle-wrapper.properties
 *.gradle
+=======
+build.gradle
+gradle/wrapper/gradle-wrapper.properties
+>>>>>>> 5694e205b054e38a2c2ae29ba82eec4c9d16bdb4
