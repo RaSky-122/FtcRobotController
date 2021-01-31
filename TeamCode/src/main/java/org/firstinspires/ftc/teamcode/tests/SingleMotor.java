@@ -28,23 +28,22 @@ public class SingleMotor extends LinearOpMode {
 
         while(opModeIsActive()){
             
-            if(gamepad1.dpad_up && motor.getPower() < 1 && !isPressed){
+            if(gamepad1.y && motorPower < 1 && !isPressed){
                 motorPower += 0.1;
-                motor.setPower(motorPower);
                 isPressed = true;
             }
-            else if (gamepad1.dpad_down && motor.getPower() > -1 && !isPressed){
+            else if (gamepad1.a && motorPower > 0 && !isPressed){
                 motorPower -= 0.1;
-                motor.setPower(motorPower);
                 isPressed = true;
             }
-            else if(!gamepad1.dpad_down && !gamepad1.dpad_up)
+            else if(!gamepad1.a && !gamepad1.y)
                 isPressed = false;
 
-            if(gamepad1.dpad_left){
-                motor.setPower(0);
-                motorPower = 0;
-            }
+            if(gamepad1.dpad_up)
+                motor.setPower(motorPower);
+            else if(gamepad1.dpad_down)
+                motor.setPower(-motorPower);
+            else motor.setPower(0);
 
             telemetry.addData("Set power: ", motorPower);
             telemetry.addData("Actual power: ", motor.getPower());
