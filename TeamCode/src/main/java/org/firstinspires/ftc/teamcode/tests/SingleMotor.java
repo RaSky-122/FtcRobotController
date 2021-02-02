@@ -29,11 +29,11 @@ public class SingleMotor extends LinearOpMode {
         while(opModeIsActive()){
             
             if(gamepad1.y && motorPower < 1 && !isPressed){
-                motorPower += 0.1;
+                motorPower += 0.05;
                 isPressed = true;
             }
             else if (gamepad1.a && motorPower > 0 && !isPressed){
-                motorPower -= 0.1;
+                motorPower -= 0.05;
                 isPressed = true;
             }
             else if(!gamepad1.a && !gamepad1.y)

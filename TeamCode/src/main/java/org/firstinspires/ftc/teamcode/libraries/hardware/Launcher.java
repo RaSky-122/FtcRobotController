@@ -6,22 +6,26 @@ import com.qualcomm.robotcore.hardware.HardwareDevice;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 
+import org.jetbrains.annotations.NotNull;
+
+import java.io.DataInput;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.zip.ZipError;
 
 public class Launcher {
 
-    private DcMotor liftMotor, rotaryMotor, launcherMotor;
+    final static String LAUNCHER_NAME = "launcher";
+    final static String TURRET_MOTOR = "turret";
+    final static String LIFT_MOTOR = "lift";
 
-    private Servo loadServo;
+    public List<HardwareDevice> initLauncherFull(@NotNull HardwareMap hardwareMap) {
 
-    public List<HardwareDevice> initLauncher(HardwareMap hardwareMap) {
+        DcMotor liftMotor = hardwareMap.get(DcMotor.class, LIFT_MOTOR);
+        DcMotor rotaryMotor = hardwareMap.get(DcMotor.class, TURRET_MOTOR);
+        DcMotor launcherMotor = hardwareMap.get(DcMotor.class, LAUNCHER_NAME);
 
-        liftMotor=hardwareMap.get(DcMotor.class, "lift");
-        rotaryMotor=hardwareMap.get(DcMotor.class, "rotary");
-        launcherMotor=hardwareMap.get(DcMotor.class, "launcher");
-
-        loadServo=hardwareMap.get(Servo.class, "loader");
+        Servo loadServo = hardwareMap.get(Servo.class, "loader");
 
         liftMotor.setDirection(DcMotorSimple.Direction.FORWARD);
         rotaryMotor.setDirection(DcMotorSimple.Direction.FORWARD);
@@ -46,6 +50,50 @@ public class Launcher {
 
         return launcherMotors;
 
+    }
+
+    public DcMotor initLauncherWheel(@NotNull HardwareMap hwMap,
+                                     String name,
+                                     DcMotor.ZeroPowerBehavior zeroBehavior,
+                                     DcMotorSimple.Direction direction){
+
+        DcMotor launcher = hwMap.dcMotor.get(name);
+
+        launcher.setZeroPowerBehavior(zeroBehavior);
+        launcher.setDirection(direction); //REVERSE
+        launcher.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
+        return launcher;
+    }
+
+    public DcMotor initLift(@NotNull HardwareMap hwMap,
+                            String name,
+                            DcMotor.ZeroPowerBehavior zeroBehavior,
+                            DcMotorSimple.Direction direction,
+                            DcMotor.RunMode mode){
+
+        DcMotor lift = hwMap.dcMotor.get(name);
+
+        lift.setZeroPowerBehavior(zeroBehavior);
+        lift.setDirection(direction);
+        lift.setMode(mode);
+
+        return lift;
+    }
+
+    public DcMotor initTurret(@NotNull HardwareMap hwMap,
+                              String name,
+                              DcMotor.ZeroPowerBehavior zeroBehavior,
+                              DcMotorSimple.Direction direction,
+                              DcMotor.RunMode mode){
+
+        DcMotor turret = hwMap.dcMotor.get(name);
+
+        turret.setZeroPowerBehavior(zeroBehavior);
+        turret.setDirection(direction);
+        turret.setMode(mode);
+
+        return turret;
     }
 
 }

@@ -12,9 +12,9 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import java.util.concurrent.TimeUnit;
 
 @Disabled
-@TeleOp(name = "Main", group = "main")
+@TeleOp(group = "main")
 
-public class OldDrivingTeleOp extends LinearOpMode {
+public class OldDriving extends LinearOpMode {
 
     private DcMotor frontRightMotor;
     private DcMotor frontLeftMotor;

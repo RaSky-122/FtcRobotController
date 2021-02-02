@@ -40,8 +40,6 @@ public class TestHardware extends LinearOpMode {
         backLeft = movementMotors.get(2);
         backRight = movementMotors.get(3);
 
-        launcher = new Launcher().initLauncher(hardwareMap);
-
         liftMotor = (DcMotor) launcher.get(0);
         rotaryMotor = (DcMotor) launcher.get(1);
         launcherMotor = (DcMotor) launcher.get(2);
