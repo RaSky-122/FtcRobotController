@@ -3,50 +3,108 @@ package org.firstinspires.ftc.teamcode.tests;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
 @TeleOp(name = "Single Motor Test", group = "test")
 
 public class SingleMotor extends LinearOpMode {
 
-    private DcMotor motor;
+    private DcMotorEx motor;
 
     @Override
     public void runOpMode() throws InterruptedException{
 
-        motor = hardwareMap.get(DcMotor.class, "motor");
+        motor = hardwareMap.get(DcMotorEx.class, "motor");
+
+        motor.setDirection(DcMotorSimple.Direction.FORWARD);
+        motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        motor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
+        motor.setVelocityPIDFCoefficients(700, 0.7,130, 0);
+
+        boolean velocity = false;
 
         while(!opModeIsActive() && !isStopRequested()) {
+
+            sleep(200);
+
+            if(gamepad1.a && motor.getMode() == DcMotor.RunMode.RUN_WITHOUT_ENCODER)
+                motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            else if(gamepad1.a)
+                motor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
+            if(gamepad1.x && !velocity){
+                velocity = true;
+            }
+            else if(gamepad1.x && velocity){
+                velocity = false;
+            }
+
+            telemetry.addData("Set run mode with ", "button A on gamepad1");
+            telemetry.addData("Current run mode ", motor.getMode());
+            telemetry.addData("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~", "");
+            telemetry.addData("Change to velocity or power with ", "button X on gamepad1");
+
+            if(velocity)
+                telemetry.addData("Current speed setting mode ", "velocity");
+            else telemetry.addData("Current speed setting mode ", "power");
+
+            telemetry.addData("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~", "");
             telemetry.addData("Waiting for start", "");
             telemetry.update();
         }
 
-        motor.setDirection(DcMotorSimple.Direction.FORWARD);
-        motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         boolean isPressed = false;
         double motorPower = 0;
+        double motorVelocity = 0;
 
         while(opModeIsActive()){
-            
-            if(gamepad1.y && motorPower < 1 && !isPressed){
-                motorPower += 0.05;
+
+            if(gamepad1.y && !isPressed) {
+
                 isPressed = true;
+
+                if(!velocity && motorPower < 1 )
+                    motorPower += 0.05;
+                else if(velocity)
+                    motorVelocity += 50;
+
+
             }
-            else if (gamepad1.a && motorPower > 0 && !isPressed){
-                motorPower -= 0.05;
+            else if (gamepad1.a && !isPressed){
+
                 isPressed = true;
+
+                if(motorPower > 0 && !velocity)
+                    motorPower -= 0.05;
+                else if(velocity && motorVelocity > 0)
+                    motorVelocity -= 50;
             }
             else if(!gamepad1.a && !gamepad1.y)
                 isPressed = false;
 
-            if(gamepad1.dpad_up)
-                motor.setPower(motorPower);
-            else if(gamepad1.dpad_down)
-                motor.setPower(-motorPower);
-            else motor.setPower(0);
+            if(gamepad1.dpad_up) {
+                if (!velocity)
+                    motor.setPower(motorPower);
+                else motor.setVelocity(motorVelocity);
+            }
+            else if(gamepad1.dpad_down) {
+                if(!velocity)
+                    motor.setPower(-motorPower);
+                else motor.setVelocity(-motorVelocity);
+            }
+            else {
+                if(!velocity)
+                    motor.setPower(0);
+                else motor.setVelocity(0);
+            }
 
             telemetry.addData("Set power: ", motorPower);
             telemetry.addData("Actual power: ", motor.getPower());
+            telemetry.addData("~~~~~~~~~~~~~~~~~~~~~~~", "");
+            telemetry.addData("Set velocity ", motorVelocity);
+            telemetry.addData("Actual velocity (ticks per second)", motor.getVelocity());
             telemetry.update();
         }
     }

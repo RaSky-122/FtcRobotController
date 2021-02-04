@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.libraries.implementations;
 
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -13,6 +14,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class GeneralInitImpl implements GeneralInit {
+
+    public DcMotorEx initExMotor(@NotNull HardwareMap hwMap, String name, DcMotor.ZeroPowerBehavior zeroBehavior,
+                                 DcMotorSimple.Direction direction, DcMotor.RunMode runMode) {
+
+        DcMotorEx motor = hwMap.get(DcMotorEx.class, name);
+
+        motor.setZeroPowerBehavior(zeroBehavior);
+        motor.setDirection(direction);
+        motor.setMode(runMode);
+
+        return motor;
+    }
 
     @Override
     public DcMotor initMotor(@NotNull HardwareMap hwMap, String name, DcMotor.ZeroPowerBehavior zeroBehavior,

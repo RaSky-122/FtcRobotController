@@ -1,24 +1,25 @@
 package org.firstinspires.ftc.teamcode.main.driving;
 
+import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.teamcode.libraries.hardware.Launcher;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
+import org.firstinspires.ftc.teamcode.libraries.hardware.Gyroscope;
 import org.firstinspires.ftc.teamcode.libraries.hardware.WheelMotors;
-import org.firstinspires.ftc.teamcode.libraries.implementations.CollectorImpl;
 import org.firstinspires.ftc.teamcode.libraries.implementations.GeneralInitImpl;
-import org.firstinspires.ftc.teamcode.libraries.software.WheelControl;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.gamepad1;
-
-@TeleOp(name = "Main", group = "main")
+@TeleOp(name = "Main Driving", group = "main")
 
 public class MainTeleOp extends LinearOpMode {
 
@@ -26,60 +27,79 @@ public class MainTeleOp extends LinearOpMode {
     double power = 0.8;
     double halfPower = 0.5;
 
-    enum ControlType {
-        TOGGLE,
-        HOLD
-    }
-
     ElapsedTime runTime = new ElapsedTime();
 
+    static final int INITIAL_ANGLE = 9;
+
+    static final String COLLECTOR_MOTOR = "collector";
     static final String LAUNCHER_MOTOR = "launcher";
     static final String TURRET_MOTOR = "turret";
     static final String LIFT_MOTOR = "lift";
     static final String LOADING_SERVO = "loader";
 
-    Launcher launcherInit = new Launcher();
+    private GeneralInitImpl init = new GeneralInitImpl();
 
     private DcMotor frontLeft, frontRight, backLeft, backRight;
     List<DcMotor> driveMotors = new ArrayList<>();
 
-    private DcMotor liftMotor, turretMotor, launcherWheelMotor, collectorMotor;
+    private DcMotor liftMotor, turretMotor, collectorMotor;
+    private DcMotorEx launcherWheelMotor;
 
     private Servo loadServo;
+
+    private BNO055IMU imu;
 
     @Override
     public void runOpMode() throws InterruptedException {
 
-        liftMotor = launcherInit.initLift(hardwareMap,
+        imu = new Gyroscope().initIMU(hardwareMap);
+
+        liftMotor = init.initMotor(hardwareMap,
                 LIFT_MOTOR,
                 DcMotor.ZeroPowerBehavior.BRAKE,
                 DcMotorSimple.Direction.REVERSE,
                 DcMotor.RunMode.RUN_USING_ENCODER);
 
-        turretMotor = launcherInit.initTurret(hardwareMap,
+        liftMotor.setTargetPosition(4500);
+        liftMotor.setPower(0);
+        liftMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+        turretMotor = init.initMotor(hardwareMap,
                 TURRET_MOTOR,
                 DcMotor.ZeroPowerBehavior.BRAKE,
                 DcMotorSimple.Direction.FORWARD,
-                DcMotor.RunMode.RUN_USING_ENCODER);
+                DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
-        launcherWheelMotor = launcherInit.initLauncherWheel(hardwareMap,
+        launcherWheelMotor = init.initExMotor(hardwareMap,
                 LAUNCHER_MOTOR,
                 DcMotor.ZeroPowerBehavior.FLOAT,
-                DcMotorSimple.Direction.REVERSE);
+                DcMotorSimple.Direction.REVERSE,
+                DcMotor.RunMode.RUN_USING_ENCODER);
+        launcherWheelMotor.setVelocityPIDFCoefficients(700, 0.7,130, 0);
 
-        loadServo = new GeneralInitImpl().initServo(hardwareMap,
+        loadServo = init.initServo(hardwareMap,
                 LOADING_SERVO,
-                Servo.Direction.FORWARD,
-                1-0.55, 1-0.08);
-        loadServo.setPosition(1);
+                Servo.Direction.FORWARD);
+        loadServo.setPosition(INITIAL_ANGLE/180.0);
 
-        collectorMotor = new CollectorImpl().initCollector(hardwareMap,
+        collectorMotor = init.initMotor(hardwareMap,
+                COLLECTOR_MOTOR,
                 DcMotor.ZeroPowerBehavior.BRAKE,
-                DcMotorSimple.Direction.REVERSE);
+                DcMotorSimple.Direction.REVERSE,
+                DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
-        driveMotors = new WheelMotors().initWheels(hardwareMap, DcMotor.ZeroPowerBehavior.FLOAT, DcMotorSimple.Direction.FORWARD, DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        driveMotors = new WheelMotors().initWheels(hardwareMap,
+                DcMotor.ZeroPowerBehavior.BRAKE,
+                DcMotorSimple.Direction.FORWARD,
+                DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
         frontLeft = driveMotors.get(0); frontRight = driveMotors.get(1);
         backLeft = driveMotors.get(2); backRight = driveMotors.get(3);
+
+        frontLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        frontRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        backLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        backRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         while(!opModeIsActive() && !isStopRequested()){
             telemetry.addData("Waiting for start", "");
@@ -88,41 +108,59 @@ public class MainTeleOp extends LinearOpMode {
 
         while(opModeIsActive()) {
 
-            smoothMovement(); /* uses gamepad1: dpad, right stick */
+            telemetry.addData("Rotation on X axis ",
+                    imu.getAngularOrientation(AxesReference.EXTRINSIC, AxesOrder.YZX, AngleUnit.DEGREES)
+                            .thirdAngle);
+
+            telemetry.addData("Rotation on Y axis ",
+                    imu.getAngularOrientation(AxesReference.EXTRINSIC, AxesOrder.YZX, AngleUnit.DEGREES)
+                            .firstAngle);
+
+            telemetry.addData("Rotation on Z axis ",
+                    imu.getAngularOrientation(AxesReference.EXTRINSIC, AxesOrder.YZX, AngleUnit.DEGREES)
+                            .secondAngle);
+
+            telemetry.addData("~~~~~~~~~~~~~~~~~~~~~~~~", "");
+
+            smoothMovement(true); /* uses gamepad1: dpad, right stick */
             launcherRun(true); /* uses gamepad1: right trigger */
             loadRing(true); /* uses gamepad1: right bumper */
             collectorRun(true); /* uses gamepad1: a */
-            liftRun(true); /* uses gamepad1: left stick */
+            liftToPosition(true); /* uses gamepad1: left stick */
+            //liftRun(true);
 
             telemetry.update();
+
         }
     }
 
     public void launcherRun(boolean getLogs){
 
-        if(gamepad1.right_trigger >= 0.4 && launcherWheelMotor.getPower() == 0){
-            launcherWheelMotor.setPower(0.6);
+        if(gamepad1.right_trigger >= 0.7 && launcherWheelMotor.getPower() == 0){
+            launcherWheelMotor.setVelocity(1500); //1500 driving
             sleep(200);
         }
-        else if(gamepad1.right_trigger >= 0.4 && launcherWheelMotor.getPower() != 0){
-            launcherWheelMotor.setPower(0);
+        else if(gamepad1.right_trigger >= 0.7 && launcherWheelMotor.getPower() != 0){
+            launcherWheelMotor.setVelocity(0);
             sleep(200);
         }
 
         if(getLogs){
-            telemetry.addData("Motor power level ", launcherWheelMotor.getPower());
+            telemetry.addData("Launcher velocity ", launcherWheelMotor.getVelocity()
+
+            );
         }
     }
 
     public void loadRing(boolean getLogs){
 
-        if(gamepad1.x && loadServo.getPosition() != 0){
+        if(gamepad1.x && loadServo.getPosition() < 25/180.0){
             runTime.reset();
-            loadServo.setPosition(0);
+            loadServo.setPosition(33/180.0);
             sleep(200);
         }
-        else if (loadServo.getPosition() != 1 && runTime.milliseconds() > 500){
-            loadServo.setPosition(1);
+        else if (loadServo.getPosition() > 15/180.0 && runTime.milliseconds() > 350){
+            loadServo.setPosition(INITIAL_ANGLE/180.0);
         }
 
         if(getLogs){
@@ -136,6 +174,10 @@ public class MainTeleOp extends LinearOpMode {
             collectorMotor.setPower(1);
             sleep(200);
         }
+        else if(gamepad1.a && collectorMotor.getPower() == 1){
+            collectorMotor.setPower(-1);
+            sleep(200);
+        }
         else if(gamepad1.a && collectorMotor.getPower() != 0){
             collectorMotor.setPower(0);
             sleep(200);
@@ -146,14 +188,69 @@ public class MainTeleOp extends LinearOpMode {
         }
     }
 
-    public void liftRun(boolean getLogs){
+    public boolean top = false;
 
-        if(-gamepad1.left_stick_y > 0.3){
+    public void liftToPosition(boolean getLogs){ /* gamepad left stick y */
+
+        if(top){
+            collectorMotor.setPower(0);
+            //if(liftMotor.getCurrentPosition() > 3000)
+            //    launcherWheelMotor.setVelocity(1600);
+            loadServo.setPosition(INITIAL_ANGLE/180.0);
+        }
+        else if(!top){
+        //    launcherWheelMotor.setPower(0);
+        }
+
+        if(-gamepad1.left_stick_y > 0.7 && !top){
+            top = true;
+            liftMotor.setTargetPosition(4400); //lift top is 4571
             liftMotor.setPower(1);
             sleep(200);
         }
+        else if(-gamepad1.left_stick_y < -0.7 && top){
+            top = false;
+            liftMotor.setTargetPosition(25);
+            liftMotor.setPower(1);
+            sleep(200);
+        }
+
+        if(!liftMotor.isBusy())
+            liftMotor.setPower(0);
+
+        if(getLogs) {
+            telemetry.addData("Lift power ", liftMotor.getPower());
+            telemetry.addData("Lift encoder ", liftMotor.getCurrentPosition());
+        }
+    }
+
+    public void liftRun(boolean getLogs){
+
+        if(gamepad1.y && liftMotor.getMode() == DcMotor.RunMode.RUN_TO_POSITION)
+            liftMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        else if(gamepad1.y)
+            liftMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+        if(-gamepad1.left_stick_y > 0.3){
+            if(liftMotor.getCurrentPosition() > 3000)
+                launcherWheelMotor.setPower(0.6);
+            collectorMotor.setPower(0);
+
+            liftMotor.setTargetPosition(4500);
+            liftMotor.setPower(1);
+
+            loadServo.setPosition(INITIAL_ANGLE/180.0);
+
+            top = true;
+            sleep(200);
+        }
         else if(-gamepad1.left_stick_y < -0.3){
+            launcherWheelMotor.setPower(0);
+
+            liftMotor.setTargetPosition(25);
             liftMotor.setPower(-1);
+
+            top = false;
             sleep(200);
         }
         else liftMotor.setPower(0);
@@ -164,7 +261,16 @@ public class MainTeleOp extends LinearOpMode {
         }
     }
 
-    public void smoothMovement() throws InterruptedException {
+    public void smoothMovement(boolean getLogs) throws InterruptedException {
+
+        if(getLogs){
+            telemetry.addData("~~~~~~~~~~~~~~~~~~~~", "");
+            telemetry.addData("Front left ", frontLeft.getCurrentPosition());
+            telemetry.addData("Front right ", frontRight.getCurrentPosition());
+            telemetry.addData("Back left ", backLeft.getCurrentPosition());
+            telemetry.addData("Back right ", backRight.getCurrentPosition());
+            telemetry.addData("~~~~~~~~~~~~~~~~~~~~", "");
+        }
 
         if(gamepad1.right_bumper && viteza == 0){
             viteza = 1;

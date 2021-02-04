@@ -1,7 +1,5 @@
 package org.firstinspires.ftc.teamcode.tests;
 
-import android.view.KeyEvent;
-
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -9,12 +7,9 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareDevice;
 import com.qualcomm.robotcore.hardware.Servo;
 
-import org.firstinspires.ftc.teamcode.libraries.implementations.CollectorImpl;
-import org.firstinspires.ftc.teamcode.libraries.hardware.Launcher;
 import org.firstinspires.ftc.teamcode.libraries.hardware.WheelMotors;
-import org.firstinspires.ftc.teamcode.libraries.software.WheelControl;
+import org.firstinspires.ftc.teamcode.libraries.implementations.GeneralInitImpl;
 
-import java.security.Key;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -45,8 +40,11 @@ public class TestHardware extends LinearOpMode {
         launcherMotor = (DcMotor) launcher.get(2);
         loadServo = (Servo) launcher.get(3);
 
-        DcMotor collector = new CollectorImpl().initCollector(hardwareMap,
-                DcMotor.ZeroPowerBehavior.BRAKE, DcMotorSimple.Direction.FORWARD);
+        DcMotor collector = new GeneralInitImpl().initMotor(hardwareMap,
+                "collector",
+                DcMotor.ZeroPowerBehavior.BRAKE,
+                DcMotorSimple.Direction.FORWARD,
+                DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         while(!opModeIsActive() && !isStopRequested()){
             telemetry.update();
@@ -54,8 +52,6 @@ public class TestHardware extends LinearOpMode {
         }
 
         new WheelMotors().resetEncoders(movementMotors, DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-
-        new WheelControl().smoothMovement(movementMotors);
 
     }
 
