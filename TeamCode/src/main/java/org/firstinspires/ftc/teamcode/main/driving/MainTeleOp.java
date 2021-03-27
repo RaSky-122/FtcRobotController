@@ -29,7 +29,7 @@ public class MainTeleOp extends LinearOpMode {
 
     ElapsedTime runTime = new ElapsedTime();
 
-    static final int INITIAL_ANGLE = 9;
+    static final double INITIAL_ANGLE = 9;
 
     static final String COLLECTOR_MOTOR = "collector";
     static final String LAUNCHER_MOTOR = "launcher";
@@ -75,7 +75,7 @@ public class MainTeleOp extends LinearOpMode {
                 DcMotor.ZeroPowerBehavior.FLOAT,
                 DcMotorSimple.Direction.REVERSE,
                 DcMotor.RunMode.RUN_USING_ENCODER);
-        launcherWheelMotor.setVelocityPIDFCoefficients(700, 0.7,130, 0);
+        launcherWheelMotor.setVelocityPIDFCoefficients(700, 0.7,130, 5);
 
         loadServo = init.initServo(hardwareMap,
                 LOADING_SERVO,
@@ -108,25 +108,13 @@ public class MainTeleOp extends LinearOpMode {
 
         while(opModeIsActive()) {
 
-            telemetry.addData("Rotation on X axis ",
-                    imu.getAngularOrientation(AxesReference.EXTRINSIC, AxesOrder.YZX, AngleUnit.DEGREES)
-                            .thirdAngle);
-
-            telemetry.addData("Rotation on Y axis ",
-                    imu.getAngularOrientation(AxesReference.EXTRINSIC, AxesOrder.YZX, AngleUnit.DEGREES)
-                            .firstAngle);
-
-            telemetry.addData("Rotation on Z axis ",
-                    imu.getAngularOrientation(AxesReference.EXTRINSIC, AxesOrder.YZX, AngleUnit.DEGREES)
-                            .secondAngle);
-
             telemetry.addData("~~~~~~~~~~~~~~~~~~~~~~~~", "");
 
-            smoothMovement(true); /* uses gamepad1: dpad, right stick */
+            smoothMovement(false); /* uses gamepad1: dpad, right stick */
             launcherRun(true); /* uses gamepad1: right trigger */
-            loadRing(true); /* uses gamepad1: right bumper */
-            collectorRun(true); /* uses gamepad1: a */
-            liftToPosition(true); /* uses gamepad1: left stick */
+            loadRing(false); /* uses gamepad1: right bumper */
+            collectorRun(false); /* uses gamepad1: a */
+            liftToPosition(false); /* uses gamepad1: left stick */
             //liftRun(true);
 
             telemetry.update();
@@ -134,10 +122,13 @@ public class MainTeleOp extends LinearOpMode {
         }
     }
 
+    private boolean launcherGoal = true;
+    private int velocity = 1530;
+
     public void launcherRun(boolean getLogs){
 
         if(gamepad1.right_trigger >= 0.7 && launcherWheelMotor.getPower() == 0){
-            launcherWheelMotor.setVelocity(1500); //1500 driving
+            launcherWheelMotor.setVelocity(1530); //1500 driving
             sleep(200);
         }
         else if(gamepad1.right_trigger >= 0.7 && launcherWheelMotor.getPower() != 0){
@@ -145,10 +136,17 @@ public class MainTeleOp extends LinearOpMode {
             sleep(200);
         }
 
-        if(getLogs){
-            telemetry.addData("Launcher velocity ", launcherWheelMotor.getVelocity()
+        if(gamepad1.b && launcherGoal){
+            launcherGoal = false;
+            velocity = 1370;
+        }
+        else if(gamepad1.b && !launcherGoal){
+            launcherGoal = true;
+            velocity = 1500;
+        }
 
-            );
+        if(getLogs){
+            telemetry.addData("Launcher velocity ", launcherWheelMotor.getVelocity());
         }
     }
 
@@ -156,7 +154,7 @@ public class MainTeleOp extends LinearOpMode {
 
         if(gamepad1.x && loadServo.getPosition() < 25/180.0){
             runTime.reset();
-            loadServo.setPosition(33/180.0);
+            loadServo.setPosition(37/180.0);
             sleep(200);
         }
         else if (loadServo.getPosition() > 15/180.0 && runTime.milliseconds() > 350){
@@ -194,17 +192,17 @@ public class MainTeleOp extends LinearOpMode {
 
         if(top){
             collectorMotor.setPower(0);
-            //if(liftMotor.getCurrentPosition() > 3000)
-            //    launcherWheelMotor.setVelocity(1600);
+            if(liftMotor.getCurrentPosition() > 3000)
+                launcherWheelMotor.setVelocity(velocity);
             loadServo.setPosition(INITIAL_ANGLE/180.0);
         }
         else if(!top){
-        //    launcherWheelMotor.setPower(0);
+            launcherWheelMotor.setPower(0);
         }
 
         if(-gamepad1.left_stick_y > 0.7 && !top){
             top = true;
-            liftMotor.setTargetPosition(4400); //lift top is 4571
+            liftMotor.setTargetPosition(4345); //lift top is 4571
             liftMotor.setPower(1);
             sleep(200);
         }
@@ -233,7 +231,7 @@ public class MainTeleOp extends LinearOpMode {
 
         if(-gamepad1.left_stick_y > 0.3){
             if(liftMotor.getCurrentPosition() > 3000)
-                launcherWheelMotor.setPower(0.6);
+                launcherWheelMotor.setVelocity(1500);
             collectorMotor.setPower(0);
 
             liftMotor.setTargetPosition(4500);

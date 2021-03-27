@@ -21,7 +21,7 @@ public class SingleMotor extends LinearOpMode {
         motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         motor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
-        motor.setVelocityPIDFCoefficients(700, 0.7,130, 0);
+        motor.setVelocityPIDFCoefficients(700, 0.7,130, 5);
 
         boolean velocity = false;
 
