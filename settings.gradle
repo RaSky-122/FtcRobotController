@@ -1,2 +1,5 @@
+include ':modulTest'
+include ':Test'
+include ':lib'
 include ':FtcRobotController'
 include ':TeamCode'
